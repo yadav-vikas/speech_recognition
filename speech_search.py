@@ -1,8 +1,10 @@
 # the speech is recognized and search on either youtube or google as specified
 
 
-import speechrecognition as sr
+import speech_recognition as sr
 import selenium as wb
+
+#NOTE: here "selenium" is used to access web browers , there are other packages also availabe like "webbrowser"
 
 r1=sr.Recognizer()
 r2=sr.Recognizer()
