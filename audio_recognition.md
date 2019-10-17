@@ -151,6 +151,80 @@ The record() method, when used inside a with block, always moves ahead in the fi
 ...
 >>> r.recognize_google(audio1)
 'the stale smell of old beer lingers'
+
+
+The Effect of Noise on Speech Recognition
+
+Noise is a fact of life. All audio recordings have some degree of noise in them, and un-handled noise can wreck the accuracy of speech recognition apps.
+
+To get a feel for how noise can affect speech recognition, download the “jackhammer.wav” file here. As always, make sure you save this to your interpreter session’s working directory.
+
+This file has the phrase “the stale smell of old beer lingers” spoken with a loud jackhammer in the background.
+
+What happens when you try to transcribe this file?
+
+>>> jackhammer = sr.AudioFile('jackhammer.wav')
+>>> with jackhammer as source:
+...     audio = r.record(source)
+...
+>>> r.recognize_google(audio)
+'the snail smell of old gear vendors'
+
+Way off!
+
+So how do you deal with this? One thing you can try is using the adjust_for_ambient_noise() method of the Recognizer class.
+
+>>> with jackhammer as source:
+...     r.adjust_for_ambient_noise(source)
+...     audio = r.record(source)
+...
+>>> r.recognize_google(audio)
+'still smell of old beer vendors'
+
+That got you a little closer to the actual phrase, but it still isn’t perfect. Also, “the” is missing from the beginning of the phrase. Why is that?
+
+The adjust_for_ambient_noise() method reads the first second of the file stream and calibrates the recognizer to the noise level of the audio. Hence, that portion of the stream is consumed before you call record() to capture the data.
+
+You can adjust the time-frame that adjust_for_ambient_noise() uses for analysis with the duration keyword argument. This argument takes a numerical value in seconds and is set to 1 by default. Try lowering this value to 0.5.
+
+>>> with jackhammer as source:
+...     r.adjust_for_ambient_noise(source, duration=0.5)
+...     audio = r.record(source)
+...
+>>> r.recognize_google(audio)
+'the snail smell like old Beer Mongers'
+
+Well, that got you “the” at the beginning of the phrase, but now you have some new issues! Sometimes it isn’t possible to remove the effect of the noise—the signal is just too noisy to be dealt with successfully. That’s the case with this file.
+
+If you find yourself running up against these issues frequently, you may have to resort to some pre-processing of the audio. This can be done with audio editing software or a Python package (such as SciPy) that can apply filters to the files. A detailed discussion of this is beyond the scope of this tutorial—check out Allen Downey’s Think DSP book if you are interested. For now, just be aware that ambient noise in an audio file can cause problems and must be addressed in order to maximize the accuracy of speech recognition.
+
+When working with noisy files, it can be helpful to see the actual API response. Most APIs return a JSON string containing many possible transcriptions. The recognize_google() method will always return the most likely transcription unless you force it to give you the full response.
+
+You can do this by setting the show_all keyword argument of the recognize_google() method to True.
+
+>>> r.recognize_google(audio, show_all=True)
+{'alternative': [
+  {'transcript': 'the snail smell like old Beer Mongers'}, 
+  {'transcript': 'the still smell of old beer vendors'}, 
+  {'transcript': 'the snail smell like old beer vendors'},
+  {'transcript': 'the stale smell of old beer vendors'}, 
+  {'transcript': 'the snail smell like old beermongers'}, 
+  {'transcript': 'destihl smell of old beer vendors'}, 
+  {'transcript': 'the still smell like old beer vendors'}, 
+  {'transcript': 'bastille smell of old beer vendors'}, 
+  {'transcript': 'the still smell like old beermongers'}, 
+  {'transcript': 'the still smell of old beer venders'}, 
+  {'transcript': 'the still smelling old beer vendors'}, 
+  {'transcript': 'musty smell of old beer vendors'}, 
+  {'transcript': 'the still smell of old beer vendor'}
+], 'final': True}
+
+As you can see, recognize_google() returns a dictionary with the key 'alternative' that points to a list of possible transcripts. The structure of this response may vary from API to API and is mainly useful for debugging.
+
+By now, you have a pretty good idea of the basics of the SpeechRecognition package. You’ve seen how to create an AudioFile instance from an audio file and use the record() method to capture data from the file. You learned how record segments of a file using the offset and duration keyword arguments of record(), and you experienced the detrimental effect noise can have on transcription accuracy.
+
+Now for the fun part. Let’s transition from transcribing static audio files to making your project interactive by accepting input from a microphone.
+
 >>> r.recognize_google(audio2)
 'it takes heat to bring out the odor a cold dip'
 
